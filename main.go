@@ -10,12 +10,13 @@ import (
 	"strings"
 	"os"
 	"encoding/json"
+	"sort"
 )
 
 // Структура для передачі даних у шаблони
 type PageData struct {
 	IsIndex bool
-	Results map[string]float64
+    Results       map[string]interface{}
     DefaultValues map[string]interface{}
 	Error   string
 }
@@ -44,6 +45,8 @@ func main() {
     http.HandleFunc("/prac-5/task-1", prac5Task1)
 	http.HandleFunc("/prac-5/data", prac5DataHandler) // API для отримання списку елементів
 
+	// Практика 6
+	http.HandleFunc("/prac-6/task-1", prac6Task1)
 
 	log.Println("Server starting on http://localhost:8080")
 	err := http.ListenAndServe(":8080", nil)
@@ -55,7 +58,63 @@ func main() {
 // Допоміжна функція для рендеру темплейтів
 func render(w http.ResponseWriter, tmplName string, data PageData, files ...string) {
 	files = append([]string{"templates/base.html"}, files...)
-	tmpl, err := template.ParseFiles(files...)
+
+	funcMap := template.FuncMap{
+		"floatToStr": func(v interface{}) string {
+			switch val := v.(type) {
+			case float64:
+				return fmt.Sprintf("%.2f", val)
+			case int:
+				return fmt.Sprintf("%d", val)
+			default:
+				return fmt.Sprintf("%v", val)
+			}
+		},
+		"safeIndex": func(list interface{}, i int) interface{} {
+			switch v := list.(type) {
+			case []float64:
+				if i >= 0 && i < len(v) {
+					return v[i]
+				}
+			case []interface{}:
+				if i >= 0 && i < len(v) {
+					return v[i]
+				}
+			}
+			return 0.0
+		},
+		"getResAtIndex": func(key string, i int, results map[string]interface{}) interface{} {
+			if val, ok := results[key]; ok {
+				if list, ok := val.([]float64); ok {
+					if i >= 0 && i < len(list) {
+						return fmt.Sprintf("%.2f", list[i])
+					}
+				}
+			}
+			return "-"
+		},
+		"getRes": func(key string, results map[string]interface{}) interface{} {
+			if val, ok := results[key]; ok {
+				return val
+			}
+			return "-"
+		},
+		"iterate": func(count int) []int {
+			var items []int
+			for i := 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+	}
+
+	tmpl := template.New("base.html").Funcs(funcMap)
+
+	var err error
+	tmpl, err = tmpl.ParseFiles(files...)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Template error: %v", err), http.StatusInternalServerError)
 		return
@@ -75,6 +134,20 @@ func getFloat(r *http.Request, key string) (float64, error) {
 		return 0, fmt.Errorf("empty value for %s", key)
 	}
 	return strconv.ParseFloat(val, 64)
+}
+
+func getFloatList(r *http.Request, key string) []float64 {
+	var result []float64
+	values := r.Form[key]
+	for _, v := range values {
+		v = strings.ReplaceAll(v, ",", ".")
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			result = append(result, f)
+		} else {
+			result = append(result, 0)
+		}
+	}
+	return result
 }
 
 // Допоміжна функція для заокруглення чисел
@@ -149,7 +222,7 @@ func prac1Task1(w http.ResponseWriter, r *http.Request) {
 		Og := Op * Kpg
 
 		// Заносимо результати у словник (map) та округлюємо їх
-		data.Results = map[string]float64{
+		data.Results = map[string]interface{}{
 			"Kpc": round(Kpc, 2),
 			"Kpg": round(Kpg, 2),
 			"Qph": round(Qph, 4),
@@ -209,7 +282,7 @@ func prac1Task2(w http.ResponseWriter, r *http.Request) {
 		Qri := Qi*(100-Wg-Ag)/100 - 0.025*Wg
 
 		// Заносимо результати у словник та округлюємо їх
-		data.Results = map[string]float64{
+		data.Results = map[string]interface{}{
 			"Hp":  round(Hp, 2),
 			"Cp":  round(Cp, 2),
 			"Sp":  round(Sp, 2),
@@ -268,7 +341,7 @@ func prac2Task1(w http.ResponseWriter, r *http.Request) {
 		Etv_gas := 0.0
 
 		// Заносимо результати
-		data.Results = map[string]float64{
+		data.Results = map[string]interface{}{
 			"ktv_coal": round(ktv_coal, 2),
 			"Etv_coal": round(Etv_coal, 2),
 			"ktv_oil":  round(ktv_oil, 2),
@@ -329,7 +402,7 @@ func prac3Task1(w http.ResponseWriter, r *http.Request) {
 		res2 := calculateProfit(q2)
 
 		// Заносимо результати
-		data.Results = map[string]float64{
+		data.Results = map[string]interface{}{
 			"res1": round(res1, 2),
 			"res2": round(res2, 2),
 			"q1":   q1,
@@ -531,7 +604,7 @@ func prac4Task1(w http.ResponseWriter, r *http.Request) {
 		Iln_min_2 := Iln_min_3 * math.Sqrt(3) / 2
 
 		// Заносимо усі результати у список
-		data.Results = map[string]float64{
+		data.Results = map[string]interface{}{
 			"sek":        round(sek, 2),
 			"s":          s,
 			"Im":         round(Im, 2),
@@ -669,7 +742,7 @@ func prac5Task1(w http.ResponseWriter, r *http.Request) {
 		M_2 := kp * Pm * Tm
 		M := Zpera*M_1 + Zperp*M_2
 
-		data.Results = map[string]float64{
+		data.Results = map[string]interface{}{
 			"woc":  round(woc, 4),
 			"wdc":  round(wdc, 4),
 			"koef": koef,
@@ -678,4 +751,379 @@ func prac5Task1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render(w, "prac_5_task_1", data, "templates/prac_5_task_1.html")
+}
+
+// Метод, щоб знайти найближчі межі до числа у списку(Використовуємо при пошуці Кв)
+func findNearestNeighbors(lst []int, target int) (int, int) {
+	sort.Ints(lst)
+	lower := -1
+	higher := -1
+	for _, v := range lst {
+		if v < target {
+			lower = v
+		} else if v > target {
+			higher = v
+			break
+		}
+	}
+	return lower, higher
+}
+
+// Метод для пошуку значення розрахункових коефіцієнтів Кр
+// для мереж живлення напругою до 1000 В (Т0 = 10 хв.)
+func getKp1(ne int, groupUseCoff float64) (float64, error) {
+	file, err := os.Open("./instance/prac_6_data_1.json")
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	var data map[string]map[string]float64
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		return 0, err
+	}
+
+	// Визначити найближчий коефіцієнтний ключ.
+    // Ключі мають вигляд «0,1», «0,15» тощо.
+    // Потрібно знайти максимальний ключ <= groupUseCoff.
+    // Припустимо, що рядок «1» існує, щоб отримати ключі.
+	firstRow := data["1"]
+	var coeffs []float64
+	for k := range firstRow {
+		f, _ := strconv.ParseFloat(k, 64)
+		coeffs = append(coeffs, f)
+	}
+	sort.Float64s(coeffs)
+
+	closestCoeff := coeffs[0]
+	for _, c := range coeffs {
+		if c <= groupUseCoff {
+			closestCoeff = c
+		} else {
+			break
+		}
+	}
+	coeffKey := fmt.Sprintf("%g", closestCoeff)
+
+	if row, ok := data[strconv.Itoa(ne)]; ok {
+		if val, ok := row[coeffKey]; ok {
+			return val, nil
+		}
+	}
+
+	// Інтерполяція
+	var intKeys []int
+	for k := range data {
+		i, _ := strconv.Atoi(k)
+		intKeys = append(intKeys, i)
+	}
+	lower, higher := findNearestNeighbors(intKeys, ne)
+
+	if lower != -1 && higher != -1 {
+		rowLower := data[strconv.Itoa(lower)]
+		rowHigher := data[strconv.Itoa(higher)]
+
+		valLower := rowLower[coeffKey]
+		valHigher := rowHigher[coeffKey]
+
+		slope := (valHigher - valLower) / float64(higher - lower)
+		value := valLower + slope*float64(ne-lower)
+		return value, nil
+	}
+
+	return 0, fmt.Errorf("Kp1 lookup failed for ne=%d", ne)
+}
+
+func getKp2(ne int, groupUseCoff float64) (float64, error) {
+	file, err := os.Open("./instance/prac_6_data_2.json")
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	var data map[string]map[string]float64
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		return 0, err
+	}
+
+	var targetRow map[string]float64
+	for k, row := range data {
+		parts := strings.Split(k, ";")
+		if len(parts) == 2 {
+			minV, _ := strconv.Atoi(parts[0])
+			maxV, _ := strconv.ParseInt(parts[1], 10, 64)
+			if ne >= minV && int64(ne) <= maxV {
+				targetRow = row
+				break
+			}
+		}
+	}
+
+	if targetRow == nil {
+		return 0, fmt.Errorf("range not found for ne=%d", ne)
+	}
+
+	var coeffs []float64
+	for k := range targetRow {
+		f, _ := strconv.ParseFloat(k, 64)
+		coeffs = append(coeffs, f)
+	}
+	sort.Float64s(coeffs)
+
+	closestCoeff := coeffs[0]
+	for _, c := range coeffs {
+		if c <= groupUseCoff {
+			closestCoeff = c
+		} else {
+			break
+		}
+	}
+	coeffKey := fmt.Sprintf("%g", closestCoeff)
+
+	if val, ok := targetRow[coeffKey]; ok {
+		return val, nil
+	}
+	return 0, fmt.Errorf("Kp2 coeff not found")
+}
+
+func prac6Task1(w http.ResponseWriter, r *http.Request) {
+	// Отримуємо значення по змовчуванню для таблиці (Значення з контрольного прикладу)
+	file, err := os.Open("./instance/prac_6_table_default_data.json")
+	if err != nil {
+		http.Error(w, "Failed to load default data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	var defaultValues map[string]interface{}
+	if err := json.NewDecoder(file).Decode(&defaultValues); err != nil {
+		http.Error(w, "Failed to parse default data", http.StatusInternalServerError)
+		return
+	}
+
+	data := PageData{IsIndex: false, DefaultValues: defaultValues, Results: make(map[string]interface{})}
+
+	if r.Method == http.MethodPost {
+		r.ParseForm()
+
+		// Допоміжна функція для парсингу списків
+		parseList := func(key string) []float64 {
+			return getFloatList(r, key)
+		}
+
+		// Отримуємо користувацький ввід для ЕП першого ШР
+		nu := parseList("nu[]")
+		cos := parseList("cos[]")
+		Uh := parseList("Uh[]")
+		n := parseList("n[]")
+		Ph := parseList("Ph[]")
+		KB := parseList("KB[]")
+		tg := parseList("tg[]")
+
+		count := len(nu)
+
+		// Масиви для результатів
+		var nPh, Ip, nPhKB, nPhKBtg, nPhSquare []float64
+		var sum_nPh, sum_nPhKB, sum_nPhKBtg, sum_nPhSquare float64
+		var sum_n float64
+
+		// Шукаємо розрахункові струми на І рівні електропостачання
+		for i := 0; i < count; i++ {
+			// n * Ph
+			val_nPh := n[i] * Ph[i]
+			nPh = append(nPh, val_nPh)
+			sum_nPh += val_nPh
+
+			// Знаходимо розрахунковий струм кожного ЕП
+			val_Ip := val_nPh / (math.Sqrt(3) * Uh[i] * cos[i] * nu[i])
+			Ip = append(Ip, round(val_Ip, 2))
+
+			// n * Ph * KB
+			val_nPhKB := val_nPh * KB[i]
+			nPhKB = append(nPhKB, round(val_nPhKB, 2))
+			sum_nPhKB += val_nPhKB
+
+			// n * Ph * KB * tg
+			val_nPhKBtg := val_nPhKB * tg[i]
+			nPhKBtg = append(nPhKBtg, round(val_nPhKBtg, 2))
+			sum_nPhKBtg += val_nPhKBtg
+
+			// n * Ph^2
+			val_nPhSquare := n[i] * math.Pow(Ph[i], 2)
+			nPhSquare = append(nPhSquare, round(val_nPhSquare, 2))
+			sum_nPhSquare += val_nPhSquare
+
+			sum_n += n[i]
+		}
+
+		// Знаходимо груповий коефіцієнт використання
+		groupUseCoff := 0.0
+		if sum_nPh > 0 {
+			groupUseCoff = sum_nPhKB / sum_nPh
+		}
+
+		// Знаходимо ефективну кількість ЕП
+		ne := 0
+		if sum_nPhSquare > 0 {
+			ne = int(math.Ceil(math.Pow(sum_nPh, 2) / sum_nPhSquare))
+		}
+
+		// Знаходимо розрахунковий коефіцієнт активної потужності по таблиці 3.3
+		// за допомогою методу, описаного раніше в utils.py
+		Kp, err := getKp1(ne, groupUseCoff)
+		if err != nil {
+			Kp = 0
+			fmt.Println("Error finding Kp1:", err)
+		}
+
+		// Знаходимо розрахункове активне навантаження
+		Pp := Kp * sum_nPhKB
+		// Знаходимо розрахункове реактивне навантаження
+		Qp := Kp * sum_nPhKBtg
+		// Знаходимо повну потужність
+		Sp := math.Sqrt(math.Pow(Pp, 2) + math.Pow(Qp, 2))
+
+		// Середня напруга для розрахунку загального струму
+		var sumUh float64
+		for _, v := range Uh {
+			sumUh += v
+		}
+		meanUh := 0.38 // Значення за замовчуванням
+		if len(Uh) > 0 {
+			meanUh = sumUh / float64(len(Uh))
+		}
+
+		// Знаходимо розрахунковий груповий струм ШР1
+		Ip_total := Pp / meanUh
+
+		// Отримуємо користувацький ввід для крупних ЕП
+		nu_big := parseList("nu_big[]")
+		cos_big := parseList("cos_big[]")
+		Uh_big := parseList("Uh_big[]")
+		n_big := parseList("n_big[]")
+		Ph_big := parseList("Ph_big[]")
+		KB_big := parseList("KB_big[]")
+		tg_big := parseList("tg_big[]")
+
+		var nPh_big, Ip_big, nPhKB_big, nPhKBtg_big, nPhSquare_big []float64
+
+		// Розрахунки ті ж самі, що і для звичайних ЕП
+		for i := 0; i < len(nu_big); i++ {
+			v_nPh := n_big[i] * Ph_big[i]
+			nPh_big = append(nPh_big, v_nPh)
+
+			v_nPhKB := v_nPh * KB_big[i]
+			nPhKB_big = append(nPhKB_big, round(v_nPhKB, 2))
+
+			// Для другого ЕП відсутнє значення коефіцієнту реактивної потужності відсутнє,
+			// тому замість нього пишемо 0 (Це ніяк не вплине на розрахунки, зроблено тільки для зручності
+			v_tg := 0.0
+			if i < len(tg_big) {
+				v_tg = tg_big[i]
+			}
+			v_nPhKBtg := v_nPhKB * v_tg
+			nPhKBtg_big = append(nPhKBtg_big, round(v_nPhKBtg, 2))
+
+			v_nPhSq := n_big[i] * math.Pow(Ph_big[i], 2)
+			nPhSquare_big = append(nPhSquare_big, round(v_nPhSq, 2))
+
+			v_Ip := v_nPh / (math.Sqrt(3) * Uh_big[i] * cos_big[i] * nu_big[i])
+			Ip_big = append(Ip_big, round(v_Ip, 2))
+		}
+
+		// Отримуємо користувацький ввід загального навантаження цеху
+		n_all, _ := getFloat(r, "n")
+		nPh_all, _ := getFloat(r, "nPh")
+		nPhKB_all, _ := getFloat(r, "nPhKB")
+		nPhKBtg_all, _ := getFloat(r, "nPhKBtg")
+		nPhSquare_all, _ := getFloat(r, "nPh_square")
+
+		// Знаходимо коефіцієнти використання цеху в цілому
+		groupUseCoffAll := 0.0
+		if nPh_all > 0 {
+			groupUseCoffAll = nPhKB_all / nPh_all
+		}
+
+		// Знаходимо ефективну кількість ЕП цеху в цілому
+		neAll := 0
+		if nPhSquare_all > 0 {
+			neAll = int(math.Round(math.Pow(nPh_all, 2) / nPhSquare_all))
+		}
+
+		// Знаходимо розрахунковий коефіцієнт активної потужності по таблиці 3.4
+		// за допомогою методу, описаного раніше в utils.py
+		KpAll, _ := getKp2(neAll, groupUseCoffAll)
+
+		// Знаходимо розрахункове активне навантаження на шинах 0,38 кВ ТП
+		PpAll := KpAll * nPhKB_all
+		// Знаходимо розрахункове реактивне навантаження на шинах 0,38 кВ ТП
+		QpAll := KpAll * nPhKBtg_all
+		// Знаходимо повну потужність на шинах 0,38 кВ ТП
+		SpAll := math.Sqrt(math.Pow(PpAll, 2) + math.Pow(QpAll, 2))
+
+		// Середня напруга (використовуємо напругу крупних ЕП як базу 0.38)
+		var sumUhBig float64
+		for _, v := range Uh_big {
+			sumUhBig += v
+		}
+		meanUhBig := 0.38
+		if len(Uh_big) > 0 {
+			meanUhBig = sumUhBig / float64(len(Uh_big))
+		}
+
+		// Знаходимо розрахунковий груповий струм на шинах 0,38 кВ ТП
+		IpAll := PpAll / meanUhBig
+
+		// Заносимо усі результати у список
+		results := map[string]interface{}{
+			"nPh_list": nPh, "Ip_list": Ip, "nPhKB_list": nPhKB, "nPhKBtg_list": nPhKBtg, "nPh_square_list": nPhSquare,
+			"group_use_coff": round(groupUseCoff, 1),
+			"ne":             ne, "Kp": round(Kp, 2), "Pp": round(Pp, 2), "Qp": round(Qp, 2), "Sp": round(Sp, 2), "Ip": round(Ip_total, 2),
+			"N": int(sum_n), "nPh_sum": int(sum_nPh), "nPhKB_sum": round(sum_nPhKB, 2), "nPhKBtg_sum": round(sum_nPhKBtg, 2),
+			"nPh_square_sum":    round(sum_nPhSquare, 2),
+			"nPh_big_list":      nPh_big, "Ip_big_list": Ip_big, "nPhKB_big_list": nPhKB_big,
+			"nPhKBtg_big_list":  nPhKBtg_big, "nPh_square_big_list": nPhSquare_big,
+			"group_use_coff_all": round(groupUseCoffAll, 2), "ne_all": neAll, "Kp_all": round(KpAll, 2),
+			"Pp_all": round(PpAll, 2), "Qp_all": round(QpAll, 2), "Sp_all": round(SpAll, 2), "Ip_all": round(IpAll, 2),
+		}
+		data.Results = results
+
+		// Також створюємо список, який позначає користувацьки ввід
+		// Це створено для того, щоб після розрахунків, значення введені користувачем, лишились
+		userValues := make(map[string]interface{})
+
+		normalMap := make(map[string]interface{})
+		normalMap["naming"] = defaultValues["normal"].(map[string]interface{})["naming"]
+		normalMap["nu[]"] = nu
+		normalMap["cos[]"] = cos
+		normalMap["Uh[]"] = Uh
+		normalMap["n[]"] = n
+		normalMap["Ph[]"] = Ph
+		normalMap["KB[]"] = KB
+		normalMap["tg[]"] = tg
+		userValues["normal"] = normalMap
+
+		bigMap := make(map[string]interface{})
+		bigMap["naming"] = defaultValues["big"].(map[string]interface{})["naming"]
+		bigMap["nu[]"] = nu_big
+		bigMap["cos[]"] = cos_big
+		bigMap["Uh[]"] = Uh_big
+		bigMap["n[]"] = n_big
+		bigMap["Ph[]"] = Ph_big
+		bigMap["KB[]"] = KB_big
+		bigMap["tg[]"] = tg_big
+		userValues["big"] = bigMap
+
+		allMap := make(map[string]interface{})
+		allMap["n"] = n_all
+		allMap["nPh"] = nPh_all
+		allMap["nPhKB"] = nPhKB_all
+		allMap["nPhKBtg"] = nPhKBtg_all
+		allMap["nPh_square"] = nPhSquare_all
+		userValues["all"] = allMap
+
+		data.DefaultValues = userValues
+	}
+
+	render(w, "prac_6_task_1", data, "templates/prac_6_task_1.html")
 }

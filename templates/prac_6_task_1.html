@@ -1,0 +1,162 @@
+{{ define "head" }}
+<title>Task 1 (Prac 6)</title>
+{{ end }}
+
+{{ define "content" }}
+<!-- Вміст головної сторінки -->
+
+<div class="pt-5 text-center">
+    <h1>Вітаємо у веб калькуляторі!</h1>
+    <h4>Цей калькулятор здатен: розраховувати електричні навантаження об’єктів з використанням методу впорядкованих діаграм.</h4>
+
+    <!-- Створення форми для введення даних -->
+    <form class="mt-5" method="post">
+        <div class="table-responsive">
+            <table class="table table-sm ms-4 me-4">
+                <thead>
+                <tr>
+                    <th>Підрозділи</th>
+                    <th>Найменування ЕП</th>
+                    <th>η<sub>н</sub></th>
+                    <th>cos φ</th>
+                    <th>U<sub>н</sub>, кВ</th>
+                    <th>n, шт</th>
+                    <th>P<sub>н</sub>, кВт</th>
+                    <th>n⋅P<sub>н</sub>, кВт</th>
+                    <th>К<sub>В</sub></th>
+                    <th>tg φ</th>
+                    <th>n⋅P<sub>н</sub>⋅К<sub>В</sub>, кВт</th>
+                    <th>n⋅P<sub>н</sub>⋅К<sub>В</sub>⋅tg φ, квар</th>
+                    <th>n⋅P<sub>н</sub><sup>2</sup></th>
+                    <th>n<sup>e</sup></th>
+                    <th>K<sub>p</sub></th>
+                    <th>P<sub>p</sub>, кВт</th>
+                    <th>Q<sub>p</sub>, квар</th>
+                    <th>S<sub>p</sub>, кВт⋅А</th>
+                    <th>I<sub>p</sub>, А</th>
+                </tr>
+                </thead>
+                <tbody>
+                
+                {{ $naming := .DefaultValues.normal.naming }}
+                {{ $nu := index .DefaultValues.normal "nu[]" }}
+                {{ $cos := index .DefaultValues.normal "cos[]" }}
+                {{ $Uh := index .DefaultValues.normal "Uh[]" }}
+                {{ $n := index .DefaultValues.normal "n[]" }}
+                {{ $Ph := index .DefaultValues.normal "Ph[]" }}
+                {{ $KB := index .DefaultValues.normal "KB[]" }}
+                {{ $tg := index .DefaultValues.normal "tg[]" }}
+                
+                {{ range $i, $name := $naming }}
+                <tr>
+                    {{ if eq $i 0 }}
+                    <td rowspan="8">ШР 1</td>
+                    {{ end }}
+                    <td>{{ $name }}</td>
+                    <td><input name="nu[]" class="form-control" value="{{ floatToStr (safeIndex $nu $i) }}" required></td>
+                    <td><input name="cos[]" class="form-control" value="{{ floatToStr (safeIndex $cos $i) }}" required></td>
+                    <td><input name="Uh[]" class="form-control" value="{{ floatToStr (safeIndex $Uh $i) }}" required></td>
+                    <td><input name="n[]" class="form-control" value="{{ floatToStr (safeIndex $n $i) }}" required></td>
+                    <td><input name="Ph[]" class="form-control" value="{{ floatToStr (safeIndex $Ph $i) }}" required></td>
+                    
+                    <td class="text-danger">{{ getResAtIndex "nPh_list" $i $.Results }}</td>
+                    
+                    <td><input name="KB[]" class="form-control" value="{{ floatToStr (safeIndex $KB $i) }}" required></td>
+                    <td><input name="tg[]" class="form-control" value="{{ floatToStr (safeIndex $tg $i) }}" required></td>
+                    
+                    <td class="text-danger">{{ getResAtIndex "nPhKB_list" $i $.Results }}</td>
+                    <td class="text-danger">{{ getResAtIndex "nPhKBtg_list" $i $.Results }}</td>
+                    <td class="text-danger">{{ getResAtIndex "nPh_square_list" $i $.Results }}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="text-danger">{{ getResAtIndex "Ip_list" $i $.Results }}</td>
+                </tr>
+                {{ end }}
+                
+                {{ range iterate 3 }}
+                <tr>
+                    <td colspan="2">ВСЬОГО ШР{{ add . 1 }}</td>
+                    <td>-</td><td>-</td><td>-</td>
+                    <td class="text-danger">{{ getRes "N" $.Results }}</td>
+                    <td>-</td>
+                    <td class="text-danger">{{ getRes "nPh_sum" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "group_use_coff" $.Results }}</td>
+                    <td>-</td>
+                    <td class="text-danger">{{ getRes "nPhKB_sum" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "nPhKBtg_sum" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "nPh_square_sum" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "ne" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Kp" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Pp" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Qp" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Sp" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Ip" $.Results }}</td>
+                </tr>
+                {{ end }}
+
+                {{ $bigNaming := .DefaultValues.big.naming }}
+                {{ $bigNu := index .DefaultValues.big "nu[]" }}
+                {{ $bigCos := index .DefaultValues.big "cos[]" }}
+                {{ $bigUh := index .DefaultValues.big "Uh[]" }}
+                {{ $bigN := index .DefaultValues.big "n[]" }}
+                {{ $bigPh := index .DefaultValues.big "Ph[]" }}
+                {{ $bigKB := index .DefaultValues.big "KB[]" }}
+                {{ $bigTg := index .DefaultValues.big "tg[]" }}
+
+                {{ range $i, $name := $bigNaming }}
+                <tr>
+                    {{ if eq $i 0 }}
+                    <td rowspan="2">Крупні ЕП</td>
+                    {{ end }}
+                    <td>{{ $name }}</td>
+                    <td><input name="nu_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigNu $i) }}" required></td>
+                    <td><input name="cos_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigCos $i) }}" required></td>
+                    <td><input name="Uh_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigUh $i) }}" required></td>
+                    <td><input name="n_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigN $i) }}" required></td>
+                    <td><input name="Ph_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigPh $i) }}" required></td>
+                    <td class="text-danger">{{ getResAtIndex "nPh_big_list" $i $.Results }}</td>
+                    <td><input name="KB_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigKB $i) }}" required></td>
+                    
+                    {{ if eq $i 0 }}
+                        <td><input name="tg_big[]" class="form-control" value="{{ floatToStr (safeIndex $bigTg $i) }}" required></td>
+                    {{ else }}
+                        <td>-</td>
+                    {{ end }}
+                    
+                    <td class="text-danger">{{ getResAtIndex "nPhKB_big_list" $i $.Results }}</td>
+                    <td class="text-danger">{{ getResAtIndex "nPhKBtg_big_list" $i $.Results }}</td>
+                    <td class="text-danger">{{ getResAtIndex "nPh_square_big_list" $i $.Results }}</td>
+                    <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+                    <td class="text-danger">{{ getResAtIndex "Ip_big_list" $i $.Results }}</td>
+                </tr>
+                {{ end }}
+
+                <tr>
+                    <td colspan="2">Всього, навантаження цеху</td>
+                    <td>-</td><td>-</td><td>-</td>
+                    <td><input name="n" class="form-control" value="{{ .DefaultValues.all.n }}" required></td>
+                    <td>-</td>
+                    <td><input name="nPh" class="form-control" value="{{ .DefaultValues.all.nPh }}" required></td>
+                    <td class="text-danger">{{ getRes "group_use_coff_all" $.Results }}</td>
+                    <td>-</td>
+                    <td><input name="nPhKB" class="form-control" value="{{ .DefaultValues.all.nPhKB }}" required></td>
+                    <td><input name="nPhKBtg" class="form-control" value="{{ .DefaultValues.all.nPhKBtg }}" required></td>
+                    <td><input name="nPh_square" class="form-control" value="{{ .DefaultValues.all.nPh_square }}" required></td>
+                    <td class="text-danger">{{ getRes "ne_all" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Kp_all" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Pp_all" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Qp_all" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Sp_all" $.Results }}</td>
+                    <td class="text-danger">{{ getRes "Ip_all" $.Results }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-lg btn-success">Розрахувати!</button>
+    </form>
+</div>
+{{ end }}
