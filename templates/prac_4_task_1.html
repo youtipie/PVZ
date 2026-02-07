@@ -1,0 +1,102 @@
+{{ define "head" }}
+<title>Task 1 (Prac 4)</title>
+{{ end }}
+
+{{ define "content" }}
+<!-- Вміст головної сторінки -->
+
+<div class="pt-5 text-center">
+    <h1>Вітаємо у веб калькуляторі!</h1>
+    <h4>Цей калькулятор здатен: розраховувати струму трифазного КЗ, струму однофазного КЗ, та перевіряти на термічну та
+        динамічну стійкість у складі.</h4>
+
+    <!-- Створення форми для введення даних -->
+    <form class="mt-5" method="post">
+        <h1>Введіть дані:</h1>
+
+        <!-- Введення даних для кожного вхідного значення -->
+        <div class="input-container mx-auto" style="max-width: 30rem;">
+             <!-- Помилка якщо є -->
+             {{ if .Error }}
+             <div class="alert alert-danger">{{ .Error }}</div>
+             {{ end }}
+
+            <!-- Поле для введення даних -->
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">I<sup>к</sup>, A</label>
+                <input type="text" name="Ik" class="form-control" placeholder="Введіть значення..." aria-label="Ik"
+                       value="{{ .DefaultValues.Ik }}" required>
+            </div>
+
+            <!-- Поле для вибору кабеля -->
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">Кабель</label>
+                <select name="cabel" class="form-select" required>
+                    <option value="">Оберіть тип кабеля</option>
+                    <option value="0">Мідні неізольовані проводи та шини</option>
+                    <option value="1">Алюмінієві неізольовані проводи та шини</option>
+                    <option value="2">Кабелі з паперовою і проводи з гумовою та полівінілхлоридною ізоляцією з мідними жилами</option>
+                    <option value="3">Кабелі з паперовою і проводи з гумовою та полівінілхлоридною ізоляцією з алюмінієвими жилами</option>
+                    <option value="4">Кабелі з гумовою та пластмасовою ізоляцією з мідними жилами</option>
+                    <option value="5">Кабелі з гумовою та пластмасовою ізоляцією з алюмінієвими жилами</option>
+                </select>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">t<sup>ф</sup>, с</label>
+                <input type="text" name="tf" class="form-control" placeholder="Введіть значення..." aria-label="tf"
+                       value="{{ .DefaultValues.tf }}" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">S<sup>М</sup>, кВ*А</label>
+                <input type="text" name="Sm" class="form-control" placeholder="Введіть значення..." aria-label="Sm"
+                       value="{{ .DefaultValues.Sm }}" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">T<sup>М</sup>, год</label>
+                <input type="text" name="Tm" class="form-control" placeholder="Введіть значення..." aria-label="Tm"
+                       value="{{ .DefaultValues.Tm }}" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">S<sup>к</sup>, МВ*А</label>
+                <input type="text" name="Sk" class="form-control" placeholder="Введіть значення..." aria-label="Sk"
+                       value="{{ .DefaultValues.Sk }}" required>
+            </div>
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-lg btn-success">Розрахувати!</button>
+    </form>
+
+    <!-- Виведення результатів, якщо користувач надіслав дані за допомогою форми -->
+    {{ if .Results }}
+    <h1>Результати:</h1>
+    <span class="d-block fs-4">1.1 Розрахунковий струм для нормального режиму: {{ .Results.Im }} A.
+        Для післяаварійного режиму: {{ .Results.Im_pa }} A;</span>
+    <span class="d-block fs-4">1.2 Економічний переріз становить: {{ .Results.sek }}.
+        Переріз жил кабеля: {{ .Results.s }};</span>
+    <span class="d-block fs-4">2. Початкове діюче значення струму трифазного КЗ становить:
+        {{ .Results.Ip0 }} кА;</span>
+    <span class="d-block fs-4">3.1 Струми трифазного та двофазного КЗ на шинах 10 кВ в нормальному та
+        мінімальному режимах, приведені до напруги 110 кВ:</span>
+    <span class="d-block fs-4">I<sub>ш</sub><sup>(3)</sup>={{ .Results.Ish_3 }} A;</span>
+    <span class="d-block fs-4">I<sub>ш</sub><sup>(2)</sup>={{ .Results.Ish_2 }} A;</span>
+    <span class="d-block fs-4">I<sub>ш.min</sub><sup>(3)</sup>={{ .Results.Ish_min_3 }} A;</span>
+    <span class="d-block fs-4">I<sub>ш.min</sub><sup>(2)</sup>={{ .Results.Ish_min_2 }} A;</span>
+    <span class="d-block fs-4">3.2 Дійсні струми трифазного та двофазного КЗ на шинах 10 кВ в нормальному
+        та мінімальному режимах:</span>
+    <span class="d-block fs-4">I<sub>ш.н</sub><sup>(3)</sup>={{ .Results.Ishn_3 }} A;</span>
+    <span class="d-block fs-4">I<sub>ш.н</sub><sup>(2)</sup>={{ .Results.Ishn_2 }} A;</span>
+    <span class="d-block fs-4">I<sub>ш.н.min</sub><sup>(3)</sup>={{ .Results.Ishn_min_3 }} A;</span>
+    <span class="d-block fs-4">I<sub>ш.н.min</sub><sup>(2)</sup>={{ .Results.Ishn_min_2 }} A;</span>
+    <span class="d-block fs-4">3.3 Струми короткого замикання:</span>
+    <span class="d-block fs-4">I<sub>л.н</sub><sup>(3)</sup>={{ .Results.Iln_3 }} A;</span>
+    <span class="d-block fs-4">I<sub>л.н</sub><sup>(2)</sup>={{ .Results.Iln_2 }} A;</span>
+    <span class="d-block fs-4">I<sub>л.н.min</sub><sup>(3)</sup>={{ .Results.Iln_min_3 }} A;</span>
+    <span class="d-block fs-4">I<sub>л.н.min</sub><sup>(2)</sup>={{ .Results.Iln_min_2 }} A;</span>
+    {{ end }}
+</div>
+{{ end }}
