@@ -24,11 +24,12 @@ func main() {
 	// Шлях, що обробляє головну сторінку, з якої можна потрапити на усі веб калькулятори курсу
 	http.HandleFunc("/", index)
 
-	// Шлях, що обробляє перше завдання першої практичної роботи
+	// Практика 1
 	http.HandleFunc("/prac-1/task-1", prac1Task1)
-
-	// Шлях, що обробляє друге завдання першої практичної роботи
 	http.HandleFunc("/prac-1/task-2", prac1Task2)
+
+	// Практика 2
+	http.HandleFunc("/prac-2/task-1", prac2Task1)
 
 	log.Println("Server starting on http://localhost:8080")
 	err := http.ListenAndServe(":8080", nil)
@@ -207,4 +208,61 @@ func prac1Task2(w http.ResponseWriter, r *http.Request) {
 
 	// Рендеримо сторінку разом з результатами обрахунків
 	render(w, "prac_1_task_2", data, "templates/prac_1_task_2.html")
+}
+
+// Шлях, що обробляє перше завдання другої практичної роботи
+func prac2Task1(w http.ResponseWriter, r *http.Request) {
+	data := PageData{IsIndex: false}
+
+	if r.Method == http.MethodPost {
+		// Отримання користувацього вводу
+		coal, err1 := getFloat(r, "coal")
+		oil, err2 := getFloat(r, "oil")
+		// gas := getFloat(r, "gas") // Газ запитується, але не впливає на викиди твердих частинок
+
+		// Також отримуємо константи, які може задати користувач
+		Ap_coal, err3 := getFloat(r, "Ap")
+		Qpi_coal, err4 := getFloat(r, "Qpi")
+		Qgi_oil, err5 := getFloat(r, "Qgi_oil")
+		Wp_oil, err6 := getFloat(r, "Wp_oil")
+		Gvun, err7 := getFloat(r, "Gvun")
+		nzu, err8 := getFloat(r, "nzu")
+
+		if err1 != nil || err2 != nil || err3 != nil || err4 != nil || err5 != nil || err6 != nil || err7 != nil || err8 != nil {
+			data.Error = "Bad values: check inputs"
+			render(w, "prac_2_task_1", data, "templates/prac_2_task_1.html")
+			return
+		}
+
+		// Значення частки леткої золи для вугілля та мазуту
+		avun_coal := 0.8
+		avun_oil := 1.0
+
+		// Шукаємо нижчу теплоту згоряння робочї маси для мазуту
+		Qri_oil := Qgi_oil*(100-Wp_oil-0.15)/100 - 0.025*Wp_oil
+
+		// Обчислюємо показник емісії твердих частинок при спалюванні вугілля
+		ktv_coal := math.Pow(10, 6) / Qpi_coal * avun_coal * Ap_coal / (100 - Gvun) * (1 - nzu)
+		Etv_coal := math.Pow(10, -6) * ktv_coal * Qpi_coal * coal
+
+		// Обчислюємо показник емісії твердих частинок при спалюванні мазуту
+		ktv_oil := math.Pow(10, 6) / Qri_oil * avun_oil * 0.15 / 100 * (1 - nzu)
+		Etv_oil := math.Pow(10, -6) * ktv_oil * Qri_oil * oil
+
+		// Для газу = 0
+		ktv_gas := 0.0
+		Etv_gas := 0.0
+
+		// Заносимо результати
+		data.Results = map[string]float64{
+			"ktv_coal": round(ktv_coal, 2),
+			"Etv_coal": round(Etv_coal, 2),
+			"ktv_oil":  round(ktv_oil, 2),
+			"Etv_oil":  round(Etv_oil, 2),
+			"ktv_gas":  ktv_gas,
+			"Etv_gas":  Etv_gas,
+		}
+	}
+
+	render(w, "prac_2_task_1", data, "templates/prac_2_task_1.html")
 }
