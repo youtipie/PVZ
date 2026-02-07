@@ -1,0 +1,74 @@
+{{ define "head" }}
+<title>Task 2</title>
+{{ end }}
+
+{{ define "content" }}
+<div class="pt-5 text-center">
+    <h1>Вітаємо у веб калькуляторі!</h1>
+    <h4>Цей калькулятор здатен: перерахувати елементарний склад та нижчої теплоти згоряння мазуту на робочу масу для
+        складу горючої маси мазуту, що задається
+        наступними параметрами: вуглець, %; водень, %; кисень, %; сірка, %; нижча теплота згоряння
+        горючої маси мазуту, МДж/кг; вологість робочої маси палива, %; зольність сухої маси, %; вміст
+        ванадію (V), мг/кг.</h4>
+    <form class="mt-5" method="post">
+        <h1>Введіть дані:</h1>
+
+        <div class="input-container mx-auto" style="max-width: 30rem;">
+             <!-- Помилка якщо є -->
+             {{ if .Error }}
+             <div class="alert alert-danger">{{ .Error }}</div>
+             {{ end }}
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">H<sup>Г</sup></label>
+                <input type="text" name="Hg" class="form-control" placeholder="Введіть значення..." aria-label="Hg" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">C<sup>Г</sup></label>
+                <input type="text" name="Cg" class="form-control" placeholder="Введіть значення..." aria-label="Cg" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">S<sup>Г</sup></label>
+                <input type="text" name="Sg" class="form-control" placeholder="Введіть значення..." aria-label="Sg" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">O<sup>Г</sup></label>
+                <input type="text" name="Og" class="form-control" placeholder="Введіть значення..." aria-label="Og" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">V<sup>Г</sup></label>
+                <input type="text" name="Vg" class="form-control" placeholder="Введіть значення..." aria-label="Vg" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">W<sup>Г</sup></label>
+                <input type="text" name="Wg" class="form-control" placeholder="Введіть значення..." aria-label="Wg" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">A<sup>Г</sup></label>
+                <input type="text" name="Ag" class="form-control" placeholder="Введіть значення..." aria-label="Ag" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">Qi<sup>daf</sup></label>
+                <input type="text" name="Qi" class="form-control" placeholder="Введіть значення..." aria-label="Qi" required>
+            </div>
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-lg btn-success">Розрахувати!</button>
+    </form>
+
+    {{ if .Results }}
+    <h1>Результати:</h1>
+    <span class="d-block fs-4">2.1. Склад робочої маси мазуту становитиме: H<sup>p</sup>={{ .Results.Hp }}%; C<sup>p</sup>={{ .Results.Cp }}%;
+        S<sup>p</sup>={{ .Results.Sp }}%; O<sup>p</sup>={{ .Results.Op }}; V<sup>p</sup>={{ .Results.Vp }} мг/кг, А<sup>p</sup>={{ .Results.Ap }}%;</span>
+    <span class="d-block fs-4">2.2. Нижча теплота згоряння мазуту на робочу масу для робочої маси за заданим складом компонентів палива становить: {{ .Results.Qri }} МДж/кг.</span>
+    {{ end }}
+</div>
+{{ end }}

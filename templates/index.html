@@ -1,0 +1,36 @@
+{{ define "head" }}
+<title>Calc home</title>
+{{ end }}
+
+{{ define "content" }}
+<!-- Вміст головної сторінки -->
+
+<h1>Доброго дня! Що робитимемо сьогодні?</h1>
+
+<!-- Карточка для практики №1 -->
+<div class="card mb-4" id="prac-1">
+    <div class="card-body">
+        <h2 class="card-title">Практика №1</h2>
+        <ul class="list-group d-inline-flex">
+            <!-- Завдання №1 -->
+            <li class="list-group-item">
+                <a href="/prac-1/task-1" class="btn btn-lg btn-primary m-2">Завдання №1</a>
+                <!-- Тултип для пояснення завдання -->
+                <i class="fa-solid fa-question" data-bs-toggle="tooltip"
+                   data-bs-title="Розрахунок складу сухої та горючої маси палива та нижчої теплоти згоряння для робочої,
+                    сухої та горючої маси за заданим складом компонентів палива"></i>
+            </li>
+
+            <!-- Завдання №2 -->
+            <li class="list-group-item">
+                <a href="/prac-1/task-2" class="btn btn-lg btn-primary m-2">Завдання №2</a>
+                <!-- Тултип для пояснення завдання -->
+                <i class="fa-solid fa-question" data-bs-toggle="tooltip"
+                   data-bs-title="Перерахунок елементарного складу та нижчої теплоти згоряння мазуту
+                   на робочу масу для складу горючої маси мазуту"></i>
+            </li>
+        </ul>
+    </div>
+</div>
+
+{{ end }}

@@ -1,0 +1,82 @@
+{{ define "head" }}
+<title>Task 1</title>
+{{ end }}
+
+{{ define "content" }}
+<!-- Вміст головної сторінки -->
+
+<div class="pt-5 text-center">
+    <h1>Вітаємо у веб калькуляторі!</h1>
+    <h4>Цей калькулятор здатен: розраховувати складу сухої та горючої маси палива та
+        нижчої теплоти згоряння для робочої, сухої та горючої маси за заданим складом компонентів
+        палива, що задаються у вигляді значень окремих компонентів типу: H<sup>p</sup>, %; C<sup>p</sup>, %;
+        S<sup>p</sup>, %; N<sup>p</sup>, %; O<sup>p</sup>, %; W<sup>p</sup>, %; A<sup>p</sup>, %.</h4>
+
+    <!-- Створення форми для введення даних -->
+    <form class="mt-5" method="post">
+        <h1>Введіть дані:</h1>
+
+        <!-- Введення даних для кожного компонента палива -->
+        <div class="input-container mx-auto" style="max-width: 30rem;">
+            <!-- Помилка якщо є -->
+            {{ if .Error }}
+            <div class="alert alert-danger">{{ .Error }}</div>
+            {{ end }}
+
+            <!-- Поле для введення даних для одного компонента
+             Інші поля виглядають так само, змінюється тільки назва компонента -->
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">H<sup>p</sup></label>
+                <input type="text" name="Hp" class="form-control" placeholder="Введіть значення..." aria-label="Hp" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">C<sup>p</sup></label>
+                <input type="text" name="Cp" class="form-control" placeholder="Введіть значення..." aria-label="Cp" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">S<sup>p</sup></label>
+                <input type="text" name="Sp" class="form-control" placeholder="Введіть значення..." aria-label="Sp" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">N<sup>p</sup></label>
+                <input type="text" name="Np" class="form-control" placeholder="Введіть значення..." aria-label="Np" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">O<sup>p</sup></label>
+                <input type="text" name="Op" class="form-control" placeholder="Введіть значення..." aria-label="Op" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">W<sup>p</sup></label>
+                <input type="text" name="Wp" class="form-control" placeholder="Введіть значення..." aria-label="Wp" required>
+            </div>
+
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">A<sup>p</sup></label>
+                <input type="text" name="Ap" class="form-control" placeholder="Введіть значення..." aria-label="Ap" required>
+            </div>
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-lg btn-success">Розрахувати!</button>
+    </form>
+
+    <!-- Виведення результатів, якщо користувач надіслав дані за допомогою форми -->
+    {{ if .Results }}
+    <h1>Результати:</h1>
+    <span class="d-block fs-4">1.1. Коефіцієнт переходу від робочої до сухої маси становить: {{ .Results.Kpc }};</span>
+    <span class="d-block fs-4">1.2. Коефіцієнт переходу від робочої до горючої маси становить: {{ .Results.Kpg }};</span>
+    <span class="d-block fs-4">1.3. Склад сухої маси палива становитиме: H<sup>C</sup>={{ .Results.Hc }}%; C<sup>C</sup>={{ .Results.Cc }}%;
+        S<sup>C</sup>={{ .Results.Sc }}%; N<sup>C</sup>={{ .Results.Nc }}; O<sup>C</sup>={{ .Results.Oc }}%, А<sup>C</sup>={{ .Results.Ac }}%;</span>
+    <span class="d-block fs-4">1.4. Склад горючої маси палива становитиме: H<sup>Г</sup>={{ .Results.Hg }}%; C<sup>Г</sup>={{ .Results.Cg }}%;
+        S<sup>Г</sup>={{ .Results.Sg }}%; N<sup>Г</sup>={{ .Results.Ng }}; O<sup>Г</sup>={{ .Results.Og }}%;</span>
+    <span class="d-block fs-4">1.5. Нижча теплота згоряння для робочої маси за заданим складом компонентів палива становить: {{ .Results.Qph }} МДж/кг;</span>
+    <span class="d-block fs-4">1.6. Нижча теплота згоряння для сухої маси за заданим складом компонентів палива становить: {{ .Results.Qch }} МДж/кг;</span>
+    <span class="d-block fs-4">1.7. Нижча теплота згоряння для горючої маси за заданим складом компонентів палива становить: {{ .Results.Qgh }} МДж/кг.</span>
+    {{ end }}
+</div>
+{{ end }}
