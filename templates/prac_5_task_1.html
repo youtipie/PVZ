@@ -1,0 +1,74 @@
+{{ define "head" }}
+<title>Task 1 (Prac 5)</title>
+{{ end }}
+
+{{ define "content" }}
+<!-- Вміст головної сторінки -->
+
+<div class="pt-5 text-center">
+    <h1>Вітаємо у веб калькуляторі!</h1>
+    <h4>Цей калькулятор здатен: порівнювати надійності одноколової та двоколової систем електропередачі та розраховувати
+        збитки від перерв електропостачання у разі застосування однотрансформаторної ГТП.</h4>
+
+    <!-- Створення форми для введення даних -->
+    <form class="mt-5" method="post">
+        <h1>Введіть дані:</h1>
+        <h3>Для одноколової системи:</h3>
+
+        <!-- Введення даних для кожного вхідного значення -->
+        <div class="input-container mx-auto" style="max-width: 40rem;">
+             <!-- Помилка якщо є -->
+             {{ if .Error }}
+             <div class="alert alert-danger">{{ .Error }}</div>
+             {{ end }}
+
+            <div id="dynamic-inputs">
+                <!-- Поля будуть додані динамічно через JS -->
+            </div>
+            <!-- Кнопка для додавання елементу ЕПС -->
+            <div class="text-center">
+                <i class="fa-solid fa-plus fa-2xl mt-3 mb-3 cursor-pointer" id="add-element-btn" style="color: #74C0FC; cursor: pointer;" title="Додати елемент"></i>
+            </div>
+
+            <h3>Двоколова система складається з двох ідентичних одноколових і секційного вимикача 10 кВ </h3>
+
+            <!-- Поле для введення даних -->
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">З<sub>пер.а</sub>, грн./кВт⋅год</label>
+                <input type="text" name="Zpera" class="form-control" placeholder="Введіть значення..." aria-label="Zpera"
+                       value="23.6" required>
+            </div>
+
+            <!-- Поле для введення даних -->
+            <div class="input-group mt-3 mb-3">
+                <label class="input-group-text fs-4 me-2">З<sub>пер.п</sub>, грн./кВт⋅год</label>
+                <input type="text" name="Zperp" class="form-control" placeholder="Введіть значення..." aria-label="Zperp"
+                       value="17.6" required>
+            </div>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-lg btn-success mt-3" id="calc-btn" disabled>Розрахувати!</button>
+    </form>
+
+    <!-- Виведення результатів, якщо користувач надіслав дані за допомогою форми -->
+    {{ if .Results }}
+    <h1>Результати:</h1>
+    <span class="d-block fs-4">1.1 Частота відмов одноколової системи: ω‎<sub>oc</sub>=
+        {{ .Results.woc }} рік<sup>-1</sup>.</span>
+    <span class="d-block fs-4">1.2 Частота відмов двоколової системи: ω‎<sub>дc</sub>=
+        {{ .Results.wdc }} рік<sup>-1</sup>.</span>
+    
+    {{ if gt .Results.koef 1.0 }}
+    <span class="d-block fs-4">1.3 Надійність двоколової системи електропередачі є значно вищою ніж одноколової.</span>
+    {{ else }}
+    <span class="d-block fs-4">1.3 Надійність одноколової системи електропередачі є значно вищою ніж двоколової.</span>
+    {{ end }}
+    
+    <span class="d-block fs-4">2. Математичне сподівання збитків від переривання електропостачання:
+        M(З<sub>пер</sub>)={{ .Results.M }} грн.</span>
+    {{ end }}
+</div>
+
+<!-- Підвантажуємо скрипт для динамічного додавання елементів ЕПС -->
+<script src="/static/js/prac_5.js"></script>
+{{ end }}

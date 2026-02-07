@@ -40,6 +40,11 @@ func main() {
 	// Практика 4
 	http.HandleFunc("/prac-4/task-1", prac4Task1)
 
+	// Практика 5
+    http.HandleFunc("/prac-5/task-1", prac5Task1)
+	http.HandleFunc("/prac-5/data", prac5DataHandler) // API для отримання списку елементів
+
+
 	log.Println("Server starting on http://localhost:8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
@@ -547,4 +552,130 @@ func prac4Task1(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	render(w, "prac_4_task_1", data, "templates/prac_4_task_1.html")
+}
+
+// Метод, що читає дані елементів ЕПС з JSON файлу
+func getPrac5Data() (map[string][]float64, error) {
+	file, err := os.Open("./instance/prac_5_data.json")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var data map[string][]float64
+	if err := json.NewDecoder(file).Decode(&data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// API Handler для отримання списку елементів
+func prac5DataHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := getPrac5Data()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(keys)
+}
+
+// Шлях, що обробляє п'яту практичну роботу
+func prac5Task1(w http.ResponseWriter, r *http.Request) {
+	data := PageData{IsIndex: false}
+
+	if r.Method == http.MethodPost {
+		// Отримання користувацього вводу
+		r.ParseForm()
+		quantitiesStr := r.Form["quantity[]"]
+		elements := r.Form["element[]"]
+		Zpera, err1 := getFloat(r, "Zpera")
+		Zperp, err2 := getFloat(r, "Zperp")
+
+		if err1 != nil || err2 != nil {
+			data.Error = "Bad values: check inputs"
+			render(w, "prac_5_task_1", data, "templates/prac_5_task_1.html")
+			return
+		}
+
+		pracData, err := getPrac5Data()
+		if err != nil {
+			data.Error = "Error reading data file"
+			render(w, "prac_5_task_1", data, "templates/prac_5_task_1.html")
+			return
+		}
+
+		var woc_sum, tvoc_num, max_t_plan float64
+
+		for i, el := range elements {
+			if i >= len(quantitiesStr) {
+				break
+			}
+			q, err := strconv.Atoi(quantitiesStr[i])
+			if err != nil {
+				continue
+			}
+			quantity := float64(q)
+
+			if props, ok := pracData[el]; ok && len(props) >= 3 {
+				omega := props[0]
+				tv := props[1]
+				tp := props[2]
+
+				woc_sum += quantity * omega
+				tvoc_num += quantity * omega * tv
+
+				if tp > max_t_plan {
+					max_t_plan = tp
+				}
+			}
+		}
+
+		// Розрахунки
+		woc := woc_sum
+		var tvoc float64
+		if woc > 0 {
+			tvoc = tvoc_num / woc
+		}
+
+		// Коефіцієнт аварійного простою одноколової системи
+		kaoc := (woc * tvoc) / 8760
+		// Коефіцієнт планового простою одноколової системи
+		kpoc := (1.2 * max_t_plan) / 8760
+		// Частота відмов одночасно двох кіл двоколової системи
+		wdk := 2 * woc * (kaoc + kpoc)
+		// Частота відмов двоколової системи з урахуванням секційного вимикача
+		wdc := wdk + 0.02
+		// Коефіцієнт надійності
+		var koef float64
+		if wdc > 0 {
+			koef = woc / wdc
+		}
+
+		// Пункт 2
+		w := 0.01
+		tv := 0.045 // 45 * 10^-3
+		Pm := 5120.0 // 5.12 * 10^3
+		Tm := 6451.0
+		kp := 0.004 // 4 * 10^-3
+
+		M_1 := w * tv * Pm * Tm
+		M_2 := kp * Pm * Tm
+		M := Zpera*M_1 + Zperp*M_2
+
+		data.Results = map[string]float64{
+			"woc":  round(woc, 4),
+			"wdc":  round(wdc, 4),
+			"koef": koef,
+			"M":    round(M, 0),
+		}
+	}
+
+	render(w, "prac_5_task_1", data, "templates/prac_5_task_1.html")
 }
